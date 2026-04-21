@@ -17,31 +17,25 @@ local CollectionService = game:GetService("CollectionService")
 -- PLAYER
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui", 5)
--- [ HÀM KÍCH HOẠT SỨC MẠNH ]
--- Chỉ chạy khi nhập đúng Key hoặc là Chủ nhân
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+-- [ 1. KIỂM TRA CHỦ NHÂN ]
+local AllowedIDs = { 128912345, 14042011 } -- ID của anh
+local isWhitelisted = false
+for _, id in pairs(AllowedIDs) do
+    if Player.UserId == id then isWhitelisted = true break end
+end
+
+-- [ 2. HÀM KÍCH HOẠT SỨC MẠNH ]
 local function ActivatePremiumPower()
     pcall(function()
-        -- Fix Lag
         loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/fixlagbyshadow.lua"))()
-        -- Fast Attack
         loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/ShadowFastAttack.lua"))()
-        print("Mai Tuan Anh Hub: Premium Features Loaded!")
     end)
 end
 
--- [ KIỂM TRA CHỦ NHÂN ĐỂ BẬT LUÔN ]
-if isWhitelisted then
-    ActivatePremiumPower()
-end
-
-local AllowedIDs = { 128912345, 14042011 }
-local isWhitelisted = false
-for _, id in pairs(AllowedIDs) do
-    if game.Players.LocalPlayer.UserId == id then
-        isWhitelisted = true
-        break
-    end
-end
+if isWhitelisted then ActivatePremiumPower() end
 
 -- CHARACTER
 local Character = Player.Character or Player.CharacterAdded:Wait()
@@ -88,27 +82,24 @@ local Root = HumanoidRootPart
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
--- [ BIẾN KIỂM TRA ĐỂ MỞ KHÓA SCRIPT ]
+
 local Verified = false 
+if isWhitelisted then Verified = true end -- Nếu là anh thì tự động cho qua
 
 if not isWhitelisted then
     local KeyWindow = Fluent:CreateWindow({
         Title = "Shadow-Premium Hub",
-        SubTitle = "Checking Verified,
+        SubTitle = "Verified",
         TabWidth = 140, Size = UDim2.fromOffset(450, 300), Acrylic = true, Theme = "Dark"
     })
 
     local KeyTab = KeyWindow:AddTab({ Title = "Nhập Key", Icon = "key" })
-    
-    -- [ TỰ ĐỘNG CHỌN TAB NHẬP KEY ]
-    KeyWindow:SelectTab(KeyTab)
+    KeyWindow:SelectTab(KeyTab) 
 
     local InputKey = ""
-
     KeyTab:AddInput("InputKey", {
         Title = "Vui lòng nhập Key:",
-        Default = "",
-        Placeholder = "Nhập tại đây...", -- Rút gọn để không bị che chữ
+        Placeholder = "Nhập tại đây...",
         Callback = function(Value) InputKey = Value end
     })
 
@@ -116,34 +107,27 @@ if not isWhitelisted then
         Title = "Xác nhận Key",
         Callback = function()
             if InputKey == "shadowyeuem" then
-                Verified = true -- Cấp quyền chạy script
-                ActivatePremiumPower() -- Mở khóa Fix Lag và Đánh Nhanh
-                Fluent:Notify({Title = "Thành công", Content = "Đang tải 15 Tab chức năng...", Duration = 5})
+                Verified = true
+                ActivatePremiumPower()
+                Fluent:Notify({Title = "Thành công", Content = "Đang load script...", Duration = 3})
                 KeyWindow:Destroy()
             else
-                -- Thông báo rõ ràng ngay giữa màn hình
-                Fluent:Notify({Title = "SAI KEY", Content = "Vui lòng lấy Key mới để sử dụng!", Duration = 5})
+                Fluent:Notify({Title = "Lỗi", Content = "Sai Key!", Duration = 3})
             end
         end
     })
 
     KeyTab:AddButton({
-        Title = "Lấy Key (Get Key)",
+        Title = "Lấy Key",
         Callback = function()
-            setclipboard("https://link-lay-key-cua-anh.com")
-            Fluent:Notify({Title = "Đã Copy", Content = "Dán link vào trình duyệt để lấy Key nhé!", Duration = 5})
+            setclipboard("https://link-lay-key.com")
+            Fluent:Notify({Title = "Đã Copy", Content = "Dán vào trình duyệt để lấy Key!", Duration = 3})
         end
     })
 
-    -- [ CHỐT CHẶN TUYỆT ĐỐI ]
-    -- Script sẽ đứng im tại đây, không hiện 15 Tab nếu chưa nhập đúng Key
+    -- ĐỢI NHẬP KEY XONG MỚI CHẠY TIẾP
     repeat task.wait() until Verified == true
-    task.wait(0.5)
 end
-
--- [ TIẾP TỤC ĐOẠN CODE TẠO WINDOW CHÍNH (15 TAB) CỦA ANH Ở DƯỚI ]
-
-
 
 local Window = Fluent:CreateWindow({
     Title = "Shadow-Premium Edition",
