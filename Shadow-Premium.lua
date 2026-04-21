@@ -1,5 +1,5 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/fixlagbyshadow.lua"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/ShadowFastAttack.lua"))()
 
 -- ==========================================
 -- SERVICES
@@ -64,35 +64,18 @@ local Root = HumanoidRootPart
 -- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
--- 1. Load Thư viện Fluent
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- 2. Tạo Window Fluent (Anh nhớ đổi SubTitle và Title theo ý anh)
 local Window = Fluent:CreateWindow({
-    Title = "Mai Tuấn Anh Hub",
-    SubTitle = "Shadow Premium Edition",
+    Title = "Shadow-Premium Edition",
+    SubTitle = "Cre by Kabii",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = false, 
-    Theme = "Rose", -- Màu hồng anh thích
+    Theme = "Rose",
     MinimizeKey = Enum.KeyCode.End
 })
--- BẢNG CHỈNH MÀU CHI TIẾT CỦA MAI TUẤN ANH
-Fluent:SetTheme("Dark") -- Để nền tối cho nổi màu nút
 
--- Chỉnh màu nhấn (Accent) - Đây là màu chủ đạo của các icon và thanh trượt
-Window:SetAccentColor(Color3.fromRGB(255, 105, 180)) -- Màu Hồng Rose
-
--- Cấu hình chuyên sâu cho các thành phần (Dán dưới Window:SetAccentColor)
-local CustomTheme = Fluent.Options -- Truy cập vào hệ thống tùy chọn của thư viện
-
--- Lưu ý: Fluent không cho phép đổi màu lẻ từng nút kiểu "nút này xanh nút kia đỏ" 
--- theo cách thủ công như UI cũ, nhưng anh có thể ép màu cho toàn bộ loại thành phần đó:
-
--- Ví dụ: Muốn các phần tiêu đề hoặc viền có màu xanh
--- (Fluent quản lý màu qua các biến nội bộ, đây là cách can thiệp)
-
--- 3. Tạo nút ảnh Đóng/Mở (Dùng đúng cái ImageButton hôm trước anh gửi)
 local ScreenGui = Instance.new("ScreenGui")
 local ImageButton = Instance.new("ImageButton")
 local UICorner = Instance.new("UICorner")
@@ -102,14 +85,13 @@ ScreenGui.Parent = game.CoreGui
 ImageButton.Parent = ScreenGui
 ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ImageButton.Size = UDim2.new(0, 40, 0, 40)
-ImageButton.Position = UDim2.new(0.1, 0, 0.16, 0) -- Vị trí nút
+ImageButton.Position = UDim2.new(0.1, 0, 0.16, 0) 
 ImageButton.Draggable = true
-ImageButton.Image = "http://www.roblox.com/asset/?id=138810852860318" -- ID ảnh của anh
+ImageButton.Image = "http://www.roblox.com/asset/?id=138810852860318"
 
 UICorner.CornerRadius = UDim.new(1, 0)
 UICorner.Parent = ImageButton
 
--- Logic Ép Mở UI (Cách này anh đã test thành công)
 ImageButton.MouseButton1Click:Connect(function()
     for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
         if v:IsA("ScreenGui") and v.Name ~= "MTA_Toggle_Gui" and v:FindFirstChild("Frame") then
@@ -118,7 +100,6 @@ ImageButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Chỉ cần DUY NHẤT 1 hàm này để điều khiển toàn bộ file
 local function wrapTab(tab)
     local wrapped = {}
     
@@ -178,200 +159,7 @@ local function wrapTab(tab)
     return wrapped
 end
 
--- ==========================================
--- TẠO CÁC TABS (ĐÚNG API: AddTab nhận string)
--- ==========================================
--- ========================================================
--- HELPER: Thêm OnChanged vào object trả về từ UI elements
--- ========================================================
-local function makeProxy(obj, callbackHolder)
-    -- obj: object gốc từ library (toggleFunction, dropdownFunction, slider_function)
-    -- callbackHolder: { extra = nil } - tham chiếu để inject OnChanged callback
-    local proxy = {}
-    setmetatable(proxy, {
-        __index = function(_, k)
-            -- OnChanged: đăng ký callback bổ sung
-            if k == "OnChanged" then
-                return function(_, fn)
-                    callbackHolder.extra = fn
-                    return proxy -- cho phép chain
-                end
-            end
-            -- SetStage (toggle) - dot method, không cần self
-            if k == "SetStage" and obj.SetStage then
-                return function(_, v) pcall(obj.SetStage, v) end
-            end
-            -- SetValue (slider/dropdown) - thử dot rồi colon
-            if k == "SetValue" then
-                return function(_, v)
-                    if obj.SetValue then
-                        local ok = pcall(obj.SetValue, v)
-                        if not ok then pcall(function() obj:SetValue(v) end) end
-                    end
-                end
-            end
-            -- GetValue
-            if k == "GetValue" then
-                return function(_)
-                    if obj.GetValue then
-                        local ok, val = pcall(obj.GetValue)
-                        if ok then return val end
-                        local ok2, val2 = pcall(function() return obj:GetValue() end)
-                        return val2
-                    end
-                end
-            end
-            -- SetText / SetDesc (label / paragraph)
-            if k == "SetText" or k == "SetDesc" then
-                return function(_, t)
-                    if obj.SetText then pcall(obj.SetText, obj, t)
-                    elseif obj.SetDesc then pcall(obj.SetDesc, obj, t) end
-                end
-            end
-            -- GetNewList (dropdown)
-            if k == "GetNewList" then
-                return function(_, list)
-                    if obj.GetNewList then pcall(obj.GetNewList, obj, list) end
-                end
-            end
-            -- ClearText (dropdown)
-            if k == "ClearText" then
-                return function(_, v)
-                    if obj.ClearText then pcall(obj.ClearText, obj, v) end
-                end
-            end
-            -- fallback: raw value
-            local v = rawget(obj, k) or (type(obj) == "table" and obj[k])
-            if type(v) == "function" then
-                return function(_, ...) return pcall(v, obj, ...) end
-            end
-            return v
-        end
-    })
-    return proxy
-end
-
-local function wrapTab(rawTab)
-    local _currentSection = nil
-    local _nextIsRight = false
-
-    -- Đảm bảo có section để dùng (lazy init)
-    local function ensureSection()
-        if not _currentSection then
-            _currentSection = rawTab:AddLeftGroupbox(" ")
-        end
-    end
-
-    local wrapped = {}
-
-    -- AddSection: tạo section mới xen kẽ Left/Right, không tạo mục ảo
-    function wrapped:AddSection(name)
-        if _nextIsRight then
-            _currentSection = rawTab:AddRightGroupbox(name or " ")
-            _nextIsRight = false
-        else
-            _currentSection = rawTab:AddLeftGroupbox(name or " ")
-            _nextIsRight = true
-        end
-        return _currentSection
-    end
-
-    function wrapped:AddToggle(id, setting)
-        ensureSection()
-        local holder = { extra = nil }
-        local origCb = setting.Callback or setting["Callback"]
-        setting.Callback = function(v)
-            if origCb then pcall(origCb, v) end
-            if holder.extra then pcall(holder.extra, v) end
-        end
-        setting["Callback"] = setting.Callback
-        -- Xóa Description để tránh button bị đẩy xuống dòng
-        setting["Description"] = nil
-        setting.Description = nil
-        local obj = _currentSection:AddToggle(id, setting)
-        return makeProxy(obj, holder)
-    end
-
-    function wrapped:AddButton(setting, cb)
-        ensureSection()
-        -- Xóa Description để tránh button bị đẩy xuống dòng
-        if type(setting) == "table" then
-            setting["Description"] = nil
-            setting.Description = nil
-        end
-        local proxy = _currentSection:AddButton(setting, cb)
-        if proxy then
-            local holder = {}
-            return makeProxy(proxy, holder)
-        end
-    end
-
-    function wrapped:AddDropdown(id, setting)
-        ensureSection()
-        local holder = { extra = nil }
-        local origCb = setting.Callback or setting["Callback"]
-        setting.Callback = function(v)
-            if origCb then pcall(origCb, v) end
-            if holder.extra then pcall(holder.extra, v) end
-        end
-        setting["Callback"] = setting.Callback
-        setting["Description"] = nil
-        setting.Description = nil
-        local obj = _currentSection:AddDropdown(id, setting)
-        return makeProxy(obj, holder)
-    end
-
-    function wrapped:AddSlider(id, setting)
-        ensureSection()
-        local holder = { extra = nil }
-        local origCb = setting.Callback or setting["Callback"]
-        setting.Callback = function(v)
-            if origCb then pcall(origCb, v) end
-            if holder.extra then pcall(holder.extra, v) end
-        end
-        setting["Callback"] = setting.Callback
-        setting["Description"] = nil
-        setting.Description = nil
-        local obj = _currentSection:AddSlider(setting)
-        return makeProxy(obj, holder)
-    end
-
-    function wrapped:AddInput(id, setting)
-        ensureSection()
-        local holder = { extra = nil }
-        local origCb = setting.Callback or setting["Callback"]
-        setting.Callback = function(v)
-            if origCb then pcall(origCb, v) end
-            if holder.extra then pcall(holder.extra, v) end
-        end
-        setting["Callback"] = setting.Callback
-        local obj = _currentSection:AddInput(id, setting)
-        return makeProxy(obj, holder)
-    end
-
-    function wrapped:AddParagraph(setting)
-        ensureSection()
-        local title = setting.Title or setting["Title"] or ""
-        local desc  = setting.Description or setting["Description"] or setting.Desc or ""
-        local txt   = desc ~= "" and (title .. "\n" .. desc) or title
-        local obj = _currentSection:AddLabel(txt)
-        local holder = {}
-        return makeProxy(obj, holder)
-    end
-
-    function wrapped:AddLabel(text)
-        ensureSection()
-        local obj = _currentSection:AddLabel(text)
-        local holder = {}
-        return makeProxy(obj, holder)
-    end
-
-    return wrapped
-end
-
--- ==========================================
 -- TẠO CÁC TABS VỚI WRAPPER
--- ==========================================
 local Tabs = {
     ["Info"]     = wrapTab(Window:AddTab({ Title = "Thông Tin", Icon = "info" })),
     ["Main"]     = wrapTab(Window:AddTab({ Title = "Cày Cấp", Icon = "home" })),
