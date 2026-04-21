@@ -74,29 +74,57 @@ local Root = HumanoidRootPart
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- ==========================================
+-- HỆ THỐNG XÁC THỰC (BẢN FIX TRIỆT ĐỂ)
+-- ==========================================
 if not isWhitelisted then
     local KeyWindow = Fluent:CreateWindow({
-        Title = "Mai Tuấn Anh Hub",
-        SubTitle = "Hệ thống xác thực",
-        TabWidth = 160, Size = UDim2.fromOffset(450, 300), Acrylic = true, Theme = "Dark"
+        Title = "Shadow-Premium HUB - Verification",
+        SubTitle = "Hệ thống bảo mật Premium",
+        TabWidth = 160, Size = UDim2.fromOffset(450, 320), Acrylic = true, Theme = "Dark"
     })
+
     local KeyTab = KeyWindow:AddTab({ Title = "Nhập Key", Icon = "key" })
+    KeyWindow:SelectTab(KeyTab) 
     local InputKey = ""
-    KeyTab:AddInput("InputKey", { Title = "Nhập Key:", Callback = function(Value) InputKey = Value end })
-    local Verified = false
+    local IsCorrect = false -- Biến chốt chặn
+
+    KeyTab:AddInput("InputKey", {
+        Title = "Vui lòng nhập Key:",
+        Default = "",
+        Placeholder = "Dán Key vào đây...",
+        Callback = function(Value) InputKey = Value end
+    })
+
     KeyTab:AddButton({
         Title = "Xác nhận Key",
         Callback = function()
-            if InputKey == "MaiTuanAnhHub_VIP" then
-                Verified = true
+            if InputKey == "shadowyeuem" then
+                IsCorrect = true -- Mở đập nước cho script chảy xuống
+                Fluent:Notify({Title = "Thành công", Content = "Đang tải script cho anh...", Duration = 5})
                 KeyWindow:Destroy()
             else
-                Fluent:Notify({Title = "Lỗi", Content = "Sai Key!", Duration = 3})
+                -- Thông báo to, rõ, không lo bị khuất
+                Fluent:Notify({Title = "SAI KEY", Content = "Vui lòng kiểm tra lại hoặc lấy Key mới!", Duration = 5})
             end
         end
     })
-    repeat task.wait() until Verified == true
+
+    KeyTab:AddButton({
+        Title = "Lấy Key (Get Key)",
+        Callback = function()
+            setclipboard("https://link-lay-key-cua-anh.com") 
+            Fluent:Notify({Title = "Đã Copy", Content = "Đã copy link lấy key vào bộ nhớ tạm!", Duration = 5})
+        end
+    })
+
+    -- CHẶN ĐỨNG SCRIPT TẠI ĐÂY
+    -- Chỉ khi IsCorrect thành true thì code tạo 15 Tab ở dưới mới chạy
+    repeat task.wait() until IsCorrect == true
+    task.wait(0.5) 
 end
+-- ==========================================
+
 
 local Window = Fluent:CreateWindow({
     Title = "Shadow-Premium Edition",
