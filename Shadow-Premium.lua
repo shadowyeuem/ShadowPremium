@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/fixlagbyhdanh.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/fixlagbyshadow.lua"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
 
 -- ==========================================
@@ -69,7 +69,11 @@ Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/UI
 Window = Library:CreateWindow({
     Title = "Shadow-Premium",
     Desc = "- Blox Fruit",
-    Image = "rbxassetid://107800262114600"
+    Image = "rbxassetid://138810852860318"
+    SubTitle = "by Shadow",
+    Footer = "Premium Version",
+    Icon = "rbxassetid://138810852860318",
+    ShowSub = true
 })
 
 -- ==========================================
