@@ -64,13 +64,119 @@ local Root = HumanoidRootPart
 -- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Wyneeer/Banana-Hub/main/BananaHubUI.lua"))()
+-- 1. Load Thư viện Fluent
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-Window = Library:CreateWindow({
-    Title = "Shadow-Premium",
-    Desc = "- Blox Fruit",
-    Image = "rbxassetid://138810852860318"
+-- 2. Tạo Window Fluent (Anh nhớ đổi SubTitle và Title theo ý anh)
+local Window = Fluent:CreateWindow({
+    Title = "Mai Tuấn Anh Hub",
+    SubTitle = "Shadow Premium Edition",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, 
+    Theme = "Rose", -- Màu hồng anh thích
+    MinimizeKey = Enum.KeyCode.End
 })
+-- BẢNG CHỈNH MÀU CHI TIẾT CỦA MAI TUẤN ANH
+Fluent:SetTheme("Dark") -- Để nền tối cho nổi màu nút
+
+-- Chỉnh màu nhấn (Accent) - Đây là màu chủ đạo của các icon và thanh trượt
+Window:SetAccentColor(Color3.fromRGB(255, 105, 180)) -- Màu Hồng Rose
+
+-- Cấu hình chuyên sâu cho các thành phần (Dán dưới Window:SetAccentColor)
+local CustomTheme = Fluent.Options -- Truy cập vào hệ thống tùy chọn của thư viện
+
+-- Lưu ý: Fluent không cho phép đổi màu lẻ từng nút kiểu "nút này xanh nút kia đỏ" 
+-- theo cách thủ công như UI cũ, nhưng anh có thể ép màu cho toàn bộ loại thành phần đó:
+
+-- Ví dụ: Muốn các phần tiêu đề hoặc viền có màu xanh
+-- (Fluent quản lý màu qua các biến nội bộ, đây là cách can thiệp)
+
+-- 3. Tạo nút ảnh Đóng/Mở (Dùng đúng cái ImageButton hôm trước anh gửi)
+local ScreenGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Name = "MTA_Toggle_Gui"
+ScreenGui.Parent = game.CoreGui
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ImageButton.Size = UDim2.new(0, 40, 0, 40)
+ImageButton.Position = UDim2.new(0.1, 0, 0.16, 0) -- Vị trí nút
+ImageButton.Draggable = true
+ImageButton.Image = "http://www.roblox.com/asset/?id=138810852860318" -- ID ảnh của anh
+
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = ImageButton
+
+-- Logic Ép Mở UI (Cách này anh đã test thành công)
+ImageButton.MouseButton1Click:Connect(function()
+    for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if v:IsA("ScreenGui") and v.Name ~= "MTA_Toggle_Gui" and v:FindFirstChild("Frame") then
+            v.Enabled = not v.Enabled
+        end
+    end
+end)
+
+-- Chỉ cần DUY NHẤT 1 hàm này để điều khiển toàn bộ file
+local function wrapTab(tab)
+    local wrapped = {}
+    
+    function wrapped:AddButton(config)
+        return tab:AddButton({
+            Title = config.Name or config.Title or "Button",
+            Description = config.Description or "",
+            Callback = config.Callback
+        })
+    end
+    
+    function wrapped:AddToggle(config)
+        local t = tab:AddToggle(config.Name or config.Title or "Toggle", {
+            Title = config.Name or config.Title or "Toggle",
+            Default = config.Default or false
+        })
+      
+        t:OnChanged(function(Value)
+            if config.Callback then
+                config.Callback(Value)
+            end
+        end)
+        return t
+    end
+
+    function wrapped:AddDropdown(config)
+        local d = tab:AddDropdown(config.Name or config.Title or "Dropdown", {
+            Title = config.Name or config.Title or "Dropdown",
+            Values = config.Options or config.Values or {},
+            Default = config.Default or 1,
+            Multi = false,
+        })
+        d:OnChanged(function(Value)
+            if config.Callback then
+                config.Callback(Value)
+            end
+        end)
+        return d
+    end
+
+    function wrapped:AddSlider(config)
+        local s = tab:AddSlider(config.Name or "Slider", {
+            Title = config.Name or "Slider",
+            Min = config.Min or 0,
+            Max = config.Max or 100,
+            Default = config.Default or 50,
+            Rounding = 1
+        })
+        s:OnChanged(config.Callback)
+        return s
+    end
+
+    function wrapped:AddSection(text)
+        return tab:AddSection(text)
+    end
+
+    return wrapped
+end
 
 -- ==========================================
 -- TẠO CÁC TABS (ĐÚNG API: AddTab nhận string)
@@ -266,97 +372,27 @@ end
 -- ==========================================
 -- TẠO CÁC TABS VỚI WRAPPER
 -- ==========================================
-Tabs = {
-    ["Info"]     = wrapTab(Window:AddTab("Thông Tin")),
-    ["Main"]     = wrapTab(Window:AddTab("Cày Cấp")),
-    ["Sea"]      = wrapTab(Window:AddTab("Sự Kiện")),
-    ["Item"]     = wrapTab(Window:AddTab("Lấy & Nâng Cấp Vật Phẩm")),
-    ["Setting"]  = wrapTab(Window:AddTab("Cài Đặt")),
-    ["Status"]   = wrapTab(Window:AddTab("Webhook")),
-    ["Stats"]    = wrapTab(Window:AddTab("Chỉ Số")),
-    ["Player"]   = wrapTab(Window:AddTab("Người Chơi")),
-    ["Teleport"] = wrapTab(Window:AddTab("Dịch Chuyển")),
-    ["Visual"]   = wrapTab(Window:AddTab("Giả Mạo")),
-    ["Fruit"]    = wrapTab(Window:AddTab("Trái Ác Quỷ")),
-    ["Raid"]     = wrapTab(Window:AddTab("Đột Kích")),
-    ["Race"]     = wrapTab(Window:AddTab("Nâng Cấp Chủng Tộc")),
-    ["Shop"]     = wrapTab(Window:AddTab("Cửa Hàng")),
-    ["Misc"]     = wrapTab(Window:AddTab("Khác")),
+local Tabs = {
+    ["Info"]     = wrapTab(Window:AddTab({ Title = "Thông Tin", Icon = "info" })),
+    ["Main"]     = wrapTab(Window:AddTab({ Title = "Cày Cấp", Icon = "home" })),
+    ["Sea"]      = wrapTab(Window:AddTab({ Title = "Sự Kiện", Icon = "waves" })),
+    ["Item"]     = wrapTab(Window:AddTab({ Title = "Lấy & Nâng Cấp Vật Phẩm", Icon = "package" })),
+    ["Setting"]  = wrapTab(Window:AddTab({ Title = "Cài Đặt", Icon = "settings" })),
+    ["Status"]   = wrapTab(Window:AddTab({ Title = "Webhook", Icon = "activity" })),
+    ["Stats"]    = wrapTab(Window:AddTab({ Title = "Chỉ Số", Icon = "bar-chart" })),
+    ["Player"]   = wrapTab(Window:AddTab({ Title = "Người Chơi", Icon = "user" })),
+    ["Teleport"] = wrapTab(Window:AddTab({ Title = "Dịch Chuyển", Icon = "map-pin" })),
+    ["Visual"]   = wrapTab(Window:AddTab({ Title = "Giả Mạo", Icon = "eye" })),
+    ["Fruit"]    = wrapTab(Window:AddTab({ Title = "Trái Ác Quỷ", Icon = "apple" })),
+    ["Raid"]     = wrapTab(Window:AddTab({ Title = "Đột Kích", Icon = "zap" })),
+    ["Race"]     = wrapTab(Window:AddTab({ Title = "Nâng Cấp Chủng Tộc", Icon = "dna" })),
+    ["Shop"]     = wrapTab(Window:AddTab({ Title = "Cửa Hàng", Icon = "shopping-cart" })),
+    ["Misc"]     = wrapTab(Window:AddTab({ Title = "Khác", Icon = "plus-circle" })),
 }
 
+
 -- ==========================================
--- ĐỔI MÀU HỒNG CHO TOÀN BỘ UI
--- ==========================================
-pcall(function()
-    if Library.SetTheme then
-        Library:SetTheme({
-            Background         = Color3.fromRGB(255, 182, 193),
-            Accent             = Color3.fromRGB(255, 20, 147),
-            PrimaryText        = Color3.fromRGB(255, 255, 255),
-            SecondaryText      = Color3.fromRGB(255, 220, 230),
-            Divider            = Color3.fromRGB(255, 105, 180),
-            Header             = Color3.fromRGB(220, 20, 90),
-            Box                = Color3.fromRGB(255, 145, 175),
-            Button             = Color3.fromRGB(255, 20, 147),
-            Hover              = Color3.fromRGB(255, 80, 160),
-            Toggle             = Color3.fromRGB(255, 20, 147),
-            ToggleBackground   = Color3.fromRGB(255, 182, 193),
-            Dropdown           = Color3.fromRGB(255, 145, 175),
-            DropdownBackground = Color3.fromRGB(255, 182, 193),
-            Scrollbar          = Color3.fromRGB(255, 20, 147),
-            Outline            = Color3.fromRGB(255, 105, 180),
-            Shadow             = Color3.fromRGB(180, 0, 80),
-        })
-    end
 
-    if Library.Theme then
-        for k, v in pairs(Library.Theme) do
-            if typeof(v) == "Color3" then
-                if k:lower():find("accent") or k:lower():find("primary") then
-                    Library.Theme[k] = Color3.fromRGB(255, 20, 147)
-                elseif k:lower():find("back") or k:lower():find("bg") then
-                    Library.Theme[k] = Color3.fromRGB(255, 182, 193)
-                elseif k:lower():find("text") then
-                    Library.Theme[k] = Color3.fromRGB(255, 255, 255)
-                else
-                    Library.Theme[k] = Color3.fromRGB(255, 105, 180)
-                end
-            end
-        end
-    end
-
-    task.spawn(function()
-        task.wait(0.5)
-        for _, gui in pairs(PlayerGui:GetChildren()) do
-            if gui:IsA("ScreenGui") then
-                for _, desc in pairs(gui:GetDescendants()) do
-                    if desc:IsA("Frame") or desc:IsA("ScrollingFrame") then
-                        if desc.BackgroundTransparency < 1 then
-                            desc.BackgroundColor3 = Color3.fromRGB(255, 182, 193)
-                        end
-                    elseif desc:IsA("TextButton") then
-                        desc.BackgroundColor3 = Color3.fromRGB(255, 20, 147)
-                        desc.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    elseif desc:IsA("TextLabel") then
-                        desc.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    elseif desc:IsA("ImageLabel") or desc:IsA("ImageButton") then
-                        desc.ImageColor3 = Color3.fromRGB(255, 105, 180)
-                    elseif desc:IsA("UIStroke") then
-                        desc.Color = Color3.fromRGB(255, 20, 147)
-                    end
-                end
-            end
-        end
-    end)
-end)
-
-wait(1)
-
-Library:Notify({
-    Title = "Shadow-Premium Hub",
-    Description = "Chào mừng! UI màu hồng đã được load thành công.\nNhấn nút góc trái màn hình để mở GUI.",
-    Duration = 4
-})
 
 -- ==========================================
 -- TOGGLE BUTTON (NÚT MỞ/ĐÓNG MENU)
