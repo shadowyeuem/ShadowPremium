@@ -64,16 +64,12 @@ local Root = HumanoidRootPart
 -- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
-Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/UI/refs/heads/main/ui_BananaHub_final.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Wyneeer/Banana-Hub/main/BananaHubUI.lua"))()
 
 Window = Library:CreateWindow({
     Title = "Shadow-Premium",
     Desc = "- Blox Fruit",
     Image = "rbxassetid://138810852860318"
-    SubTitle = "by Shadow",
-    Footer = "Premium Version",
-    Icon = "rbxassetid://138810852860318",
-    ShowSub = true
 })
 
 -- ==========================================
