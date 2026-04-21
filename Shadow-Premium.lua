@@ -127,6 +127,8 @@ if not isWhitelisted then
     repeat task.wait() until Verified == true
 end
 
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
 local Window = Fluent:CreateWindow({
     Title = "Shadow-Premium Edition",
     SubTitle = "Cre by Kabii",
@@ -240,15 +242,6 @@ local Tabs = {
     ["Shop"]     = wrapTab(Window:AddTab({ Title = "Cửa Hàng", Icon = "shopping-cart" })),
     ["Misc"]     = wrapTab(Window:AddTab({ Title = "Khác", Icon = "plus-circle" })),
 }
-
-
--- ==========================================
-
-
--- ==========================================
--- TOGGLE BUTTON (NÚT MỞ/ĐÓNG MENU)
--- ==========================================
-
 -- Anti AFK
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
@@ -256,7 +249,6 @@ game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
--- ==========================================
 -- SEA FLAGS (không kiểm tra, bật hết để mọi tính năng hoạt động)
 -- ==========================================
 Sea1 = true
