@@ -3,6 +3,8 @@
 -- SERVICES
 -- ==========================================
 local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local Verified = false 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -13,35 +15,13 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 local CollectionService = game:GetService("CollectionService")
-
 -- PLAYER
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui", 5)
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-
--- [ 1. KIỂM TRA CHỦ NHÂN ]
-local AllowedIDs = { 128912345, 14042011 } -- ID của anh
-local isWhitelisted = false
-for _, id in pairs(AllowedIDs) do
-    if Player.UserId == id then isWhitelisted = true break end
-end
-
--- [ 2. HÀM KÍCH HOẠT SỨC MẠNH ]
-local function ActivatePremiumPower()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/fixlagbyshadow.lua"))()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/ShadowFastAttack.lua"))()
-    end)
-end
-
-if isWhitelisted then ActivatePremiumPower() end
-
 -- CHARACTER
 local Character = Player.Character or Player.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-
 -- EXPLOIT CHECK
 local executor = (getexecutorname and getexecutorname()) or (identifyexecutor and identifyexecutor())
 if executor then
@@ -78,27 +58,46 @@ local TW = TweenService
 local plr = Player
 local Root = HumanoidRootPart
 
+local function ActivatePremiumPower()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/ShadowFastAttack.lua"))()
+    end)
+end 
+
+
 -- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local Verified = false 
-if isWhitelisted then Verified = true end -- Nếu là anh thì tự động cho qua
+local AllowedIDs = { 128912345, 14042011 } -- ID của anh
+local isWhitelisted = false
+for _, id in pairs(AllowedIDs) do
+    if Player.UserId == id then 
+        isWhitelisted = true
+        Verified = true
+        break 
+    end
+end
+
+if isWhitelisted then 
+    ActivatePremiumPower() 
+end
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 if not isWhitelisted then
     local KeyWindow = Fluent:CreateWindow({
         Title = "Shadow-Premium Hub",
-        SubTitle = "Verified",
+        SubTitle = "Verification System",
         TabWidth = 140, Size = UDim2.fromOffset(450, 300), Acrylic = true, Theme = "Dark"
     })
 
-    local KeyTab = KeyWindow:AddTab({ Title = "Nhập Key", Icon = "key" })
-    KeyWindow:SelectTab(KeyTab) 
+    local KeyTab = KeyWindow:AddTab({ Title = "Key", Icon = "key" })
+    KeyWindow:SelectTab(KeyTab)
 
     local InputKey = ""
     KeyTab:AddInput("InputKey", {
-        Title = "Vui lòng nhập Key:",
+        Title = "Nhập Key Premium:",
         Placeholder = "Nhập tại đây...",
         Callback = function(Value) InputKey = Value end
     })
@@ -107,12 +106,12 @@ if not isWhitelisted then
         Title = "Xác nhận Key",
         Callback = function()
             if InputKey == "shadowyeuem" then
-                Verified = true
-                ActivatePremiumPower()
-                Fluent:Notify({Title = "Thành công", Content = "Đang load script...", Duration = 3})
                 KeyWindow:Destroy()
+                Fluent:Notify({Title = "Thành công", Content = "Đang kích hoạt Premium...", Duration = 3})
+                ActivatePremiumPower() 
+                Verified = true 
             else
-                Fluent:Notify({Title = "Lỗi", Content = "Sai Key!", Duration = 3})
+                Fluent:Notify({Title = "Lỗi", Content = "Sai Key rồi!", Duration = 3})
             end
         end
     })
@@ -121,11 +120,10 @@ if not isWhitelisted then
         Title = "Lấy Key",
         Callback = function()
             setclipboard("https://link-lay-key.com")
-            Fluent:Notify({Title = "Đã Copy", Content = "Dán vào trình duyệt để lấy Key!", Duration = 3})
+            Fluent:Notify({Title = "Đã Copy", Content = "Dán vào trình duyệt để lấy key!", Duration = 3})
         end
     })
 
-    -- ĐỢI NHẬP KEY XONG MỚI CHẠY TIẾP
     repeat task.wait() until Verified == true
 end
 
