@@ -1,7 +1,3 @@
-
--- ==========================================
--- SERVICES
--- ==========================================
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local Verified = false 
@@ -64,7 +60,6 @@ local function ActivatePremiumPower()
     end)
 end 
 
--- [[ BẢNG KHAI BÁO LỐI TẮT CHO TẤT CẢ TABS ]]
 local Tabs = {
     Info     = Tabs["Info"],
     Main     = Tabs["Main"],
@@ -83,18 +78,14 @@ local Tabs = {
     Misc     = Tabs["Misc"]
 }
 
--- [[ CODE KÉO DÀI TẤT CẢ TAB ĐỂ TRƯỢT MƯỢT HƠN ]]
 for _, tab in pairs(Tabs) do
-    for i = 1, 3 do
-        tab:AddSection(" ")
+    if tab and tab.AddSection then
+        for i = 1, 4 do
+            tab:AddSection(" ") 
+        end
     end
 end
-
-
--- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
--- ==========================================
-
 local AllowedIDs = { 128912345, 14042011 } -- ID của anh
 local isWhitelisted = false
 for _, id in pairs(AllowedIDs) do
@@ -192,11 +183,10 @@ end)
 local function wrapTab(rawTab)
     local wrapped = {}
 
-    -- Tự động tạo một Section ngầm để chứa đồ, không lo bị trống Tab
     local defaultSection = rawTab:AddSection("Chức Năng")
 
     function wrapped:AddToggle(id, setting)
-        -- Chuyển đổi ID và Table sang chuẩn Fluent
+
         local title = id
         local callback = setting.Callback
         local default = setting.Default or false
@@ -255,7 +245,7 @@ local Tabs = {
     ["Info"]     = wrapTab(Window:AddTab({ Title = "Thông Tin", Icon = "info" })),
     ["Main"]     = wrapTab(Window:AddTab({ Title = "Cày Cấp", Icon = "home" })),
     ["Sea"]      = wrapTab(Window:AddTab({ Title = "Sự Kiện", Icon = "waves" })),
-    ["Item"]     = wrapTab(Window:AddTab({ Title = "Lấy & Nâng Cấp Vật Phẩm", Icon = "package" })),
+    ["Item"]     = wrapTab(Window:AddTab({ Title = "Vật Phẩm", Icon = "package" })),
     ["Setting"]  = wrapTab(Window:AddTab({ Title = "Cài Đặt", Icon = "settings" })),
     ["Status"]   = wrapTab(Window:AddTab({ Title = "Webhook", Icon = "activity" })),
     ["Stats"]    = wrapTab(Window:AddTab({ Title = "Chỉ Số", Icon = "bar-chart" })),
@@ -264,10 +254,26 @@ local Tabs = {
     ["Visual"]   = wrapTab(Window:AddTab({ Title = "Giả Mạo", Icon = "eye" })),
     ["Fruit"]    = wrapTab(Window:AddTab({ Title = "Trái Ác Quỷ", Icon = "apple" })),
     ["Raid"]     = wrapTab(Window:AddTab({ Title = "Đột Kích", Icon = "zap" })),
-    ["Race"]     = wrapTab(Window:AddTab({ Title = "Nâng Cấp Chủng Tộc", Icon = "dna" })),
+    ["Race"]     = wrapTab(Window:AddTab({ Title = "Chủng Tộc", Icon = "dna" })),
     ["Shop"]     = wrapTab(Window:AddTab({ Title = "Cửa Hàng", Icon = "shopping-cart" })),
     ["Misc"]     = wrapTab(Window:AddTab({ Title = "Khác", Icon = "plus-circle" })),
 }
+
+-- 2. ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT:
+-- Nó biến Tabs["Main"] thành Tabs.Main để các code bên dưới của anh chạy được
+for k, v in pairs(Tabs) do
+    Tabs[k] = v
+end
+
+-- 3. Thêm code tăng ô trượt như anh muốn
+for _, tab in pairs(Tabs) do
+    if tab and tab.AddSection then
+        for i = 1, 5 do
+            tab:AddSection(" ")
+        end
+    end
+end
+
 -- Anti AFK
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
