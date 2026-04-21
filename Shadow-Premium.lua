@@ -20,6 +20,15 @@ local CollectionService = game:GetService("CollectionService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui", 5)
 
+local AllowedIDs = { 128912345, 14042011 }
+local isWhitelisted = false
+for _, id in pairs(AllowedIDs) do
+    if game.Players.LocalPlayer.UserId == id then
+        isWhitelisted = true
+        break
+    end
+end
+
 -- CHARACTER
 local Character = Player.Character or Player.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
@@ -65,6 +74,29 @@ local Root = HumanoidRootPart
 -- LOAD UI LIBRARY Shadow-Premium Hub)
 -- ==========================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+if not isWhitelisted then
+    local KeyWindow = Fluent:CreateWindow({
+        Title = "Mai Tuấn Anh Hub",
+        SubTitle = "Hệ thống xác thực",
+        TabWidth = 160, Size = UDim2.fromOffset(450, 300), Acrylic = true, Theme = "Dark"
+    })
+    local KeyTab = KeyWindow:AddTab({ Title = "Nhập Key", Icon = "key" })
+    local InputKey = ""
+    KeyTab:AddInput("InputKey", { Title = "Nhập Key:", Callback = function(Value) InputKey = Value end })
+    local Verified = false
+    KeyTab:AddButton({
+        Title = "Xác nhận Key",
+        Callback = function()
+            if InputKey == "MaiTuanAnhHub_VIP" then
+                Verified = true
+                KeyWindow:Destroy()
+            else
+                Fluent:Notify({Title = "Lỗi", Content = "Sai Key!", Duration = 3})
+            end
+        end
+    })
+    repeat task.wait() until Verified == true
+end
 
 local Window = Fluent:CreateWindow({
     Title = "Shadow-Premium Edition",
@@ -100,64 +132,66 @@ ImageButton.MouseButton1Click:Connect(function()
     end
 end)
 
-local function wrapTab(tab)
+local function wrapTab(rawTab)
     local wrapped = {}
-    
-    function wrapped:AddButton(config)
-        return tab:AddButton({
-            Title = config.Name or config.Title or "Button",
-            Description = config.Description or "",
-            Callback = config.Callback
+
+    -- Tự động tạo một Section ngầm để chứa đồ, không lo bị trống Tab
+    local defaultSection = rawTab:AddSection("Chức Năng")
+
+    function wrapped:AddToggle(id, setting)
+        -- Chuyển đổi ID và Table sang chuẩn Fluent
+        local title = id
+        local callback = setting.Callback
+        local default = setting.Default or false
+        
+        local t = rawTab:AddToggle(id, {
+            Title = title,
+            Default = default,
+            Callback = callback
         })
-    end
-    
-    function wrapped:AddToggle(config)
-        local t = tab:AddToggle(config.Name or config.Title or "Toggle", {
-            Title = config.Name or config.Title or "Toggle",
-            Default = config.Default or false
-        })
-      
-        t:OnChanged(function(Value)
-            if config.Callback then
-                config.Callback(Value)
-            end
-        end)
         return t
     end
 
-    function wrapped:AddDropdown(config)
-        local d = tab:AddDropdown(config.Name or config.Title or "Dropdown", {
-            Title = config.Name or config.Title or "Dropdown",
-            Values = config.Options or config.Values or {},
-            Default = config.Default or 1,
-            Multi = false,
+    function wrapped:AddButton(setting)
+        return rawTab:AddButton({
+            Title = setting.Name or setting.Title or "Button",
+            Callback = setting.Callback
         })
-        d:OnChanged(function(Value)
-            if config.Callback then
-                config.Callback(Value)
-            end
-        end)
+    end
+
+    function wrapped:AddDropdown(id, setting)
+        local d = rawTab:AddDropdown(id, {
+            Title = id,
+            Values = setting.Options or setting.Values or {},
+            Default = setting.Default or 1,
+            Callback = setting.Callback
+        })
         return d
     end
 
-    function wrapped:AddSlider(config)
-        local s = tab:AddSlider(config.Name or "Slider", {
-            Title = config.Name or "Slider",
-            Min = config.Min or 0,
-            Max = config.Max or 100,
-            Default = config.Default or 50,
-            Rounding = 1
+    function wrapped:AddSlider(id, setting)
+        local s = rawTab:AddSlider(id, {
+            Title = id,
+            Min = setting.Min or 0,
+            Max = setting.Max or 100,
+            Default = setting.Default or 50,
+            Rounding = 1,
+            Callback = setting.Callback
         })
-        s:OnChanged(config.Callback)
         return s
     end
 
-    function wrapped:AddSection(text)
-        return tab:AddSection(text)
+    function wrapped:AddSection(name)
+        return rawTab:AddSection(name)
+    end
+
+    function wrapped:AddLabel(text)
+        return rawTab:AddParagraph({Title = text, Content = ""})
     end
 
     return wrapped
 end
+
 
 -- TẠO CÁC TABS VỚI WRAPPER
 local Tabs = {
