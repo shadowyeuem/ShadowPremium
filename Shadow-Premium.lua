@@ -64,6 +64,32 @@ local function ActivatePremiumPower()
     end)
 end 
 
+-- [[ BẢNG KHAI BÁO LỐI TẮT CHO TẤT CẢ TABS ]]
+local Tabs = {
+    Info     = Tabs["Info"],
+    Main     = Tabs["Main"],
+    Sea      = Tabs["Sea"],
+    Item     = Tabs["Item"],
+    Setting  = Tabs["Setting"],
+    Status   = Tabs["Status"],
+    Stats    = Tabs["Stats"],
+    Player   = Tabs["Player"],
+    Teleport = Tabs["Teleport"],
+    Visual   = Tabs["Visual"],
+    Fruit    = Tabs["Fruit"],
+    Raid     = Tabs["Raid"],
+    Race     = Tabs["Race"],
+    Shop     = Tabs["Shop"],
+    Misc     = Tabs["Misc"]
+}
+
+-- [[ CODE KÉO DÀI TẤT CẢ TAB ĐỂ TRƯỢT MƯỢT HƠN ]]
+for _, tab in pairs(Tabs) do
+    for i = 1, 3 do
+        tab:AddSection(" ")
+    end
+end
+
 
 -- ==========================================
 -- LOAD UI LIBRARY Shadow-Premium Hub)
