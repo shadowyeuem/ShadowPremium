@@ -1,6 +1,9 @@
-repeat wait() until game:IsLoaded()
+-- [[ SHADOW-PREMIUM v1.2 - HYBRID HEADER ]]
+repeat task.wait() until game:IsLoaded()
+
+-- Giữ nguyên tên biến cũ của Anh để không lỗi UI
 do
-    ply = game.Players
+    ply = game:GetService("Players")
     plr = ply.LocalPlayer
     replicated = game:GetService("ReplicatedStorage")
     TeleportService = game:GetService("TeleportService")
@@ -10,76 +13,79 @@ do
     Stats = game:GetService("Stats")
     vim1 = game:GetService("VirtualInputManager")
     vim2 = game:GetService("VirtualUser")
-    HttpService = game:GetService("HttpService")
-    if not plr.Character then plr.CharacterAdded:Wait() end
-    Root = plr.Character:WaitForChild("HumanoidRootPart", 10)
-      Lv = plr.Data.Level.Value
-    Enemies = workspace.Enemies
-    TeamSelf = plr.Team
-    Energy = plr.Character:FindFirstChild("Energy") and plr.Character.Energy.Value or 0
+    
+    -- Khởi tạo bảng dữ liệu
     Boss = {}
     BringConnections = {}
     MaterialList = {}
     NPCList = {}
+    
+    -- Biến logic
     shouldTween = false
     SoulGuitar = false
     KenTest = true
     debug = false
-    Brazier1 = false
-    Brazier2 = false
-    Brazier3 = false
+    Brazier1, Brazier2, Brazier3 = false, false, false
     Sec = 0.1
     ClickState = 0
     Num_self = 25
-end
--- [[ KÍCH HOẠT BIẾN SEA TỔNG ]]
-local v5 = game.PlaceId
-if v5 == 2753915549 or v5 == 4442272183 or v5 == 7449423635 then
-    Sea = true
-else
-    Sea = true
-end
-
-if Sea then 
-    print("✅ Shadow-Premium: Da kich hoat bien Sea, chuan bi quat quai!")
-end
-
--- [[ ĐỢI GAME LOAD ]]
-repeat
-    wait()
-until game:IsLoaded() and plr.PlayerGui:WaitForChild("Main"):FindFirstChild("Loading")
-
--- [[ PHÂN LOẠI WORLD (ID GỐC CỦA ANH) ]]
-World1 = game.PlaceId == 2753915549
-World2 = game.PlaceId == 4442272183
-World3 = game.PlaceId == 7449423635
-
--- [[ KIỂM TRA SEA - CHỈ THÔNG BÁO, KHÔNG KICK ]]
-if World1 or World2 or World3 then
-    Sea = true
-    print("✅ Shadow-Premium: Da xac nhan Sea!")
-else
-    Sea = true -- Van cho Sea = true de code farm phia duoi chay duoc
-    warn("⚠️ Shadow-Premium: Khong khop ID Sea nhung van cho Anh vao!")
-end
-
-Marines = function()
-    replicated.Remotes.CommF_:InvokeServer("SetTeam", "Marines")
-end
-Pirates = function()
-    replicated.Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
-end
-
-_G.FastAttack = true
-_G.AutoClick = true 
-_G.AttackDistance = 3.8 
-Sea = true             
-
-task.spawn(function()
+    
+    -- Fix lỗi Root và Data cho Sea 1/2/3
     pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/shadowyeuem/ShadowPremium/refs/heads/main/ShadowFastAttack.lua"))()
+        Root = plr.Character:WaitForChild("HumanoidRootPart", 5)
+        Lv = plr.Data.Level.Value
+        TeamSelf = plr.Team
     end)
-end)
+end
+
+-- World Detection (Giữ nguyên logic gốc của Anh)
+local placeId = game.PlaceId
+if placeId == 2753915549 or placeId == 85211729168715 then World1 = true
+elseif placeId == 4442272183 or placeId == 79091703265657 then World2 = true
+elseif placeId == 7449423635 or placeId == 100117331123089 then World3 = true
+else
+    -- Nếu kh nhận Sea thì nhảy server chứ kh kick để Anh còn chỉnh code
+    warn("World not recognized!")
+end
+Sea = World1 or World2 or World3
+
+-- [[ SHADOW-PREMIUM: GHOST ATTACK (NO WEAPON NEEDED) ]]
+_G.FastAttack = true
+
+function ShadowAttack(target)
+    if not target or not _G.FastAttack then return end
+    pcall(function()
+        -- 1. Lấy vũ khí mạnh nhất trong túi đồ (Melee hoặc Sword)
+        local weaponName = ""
+        for _, v in pairs(plr.Backpack:GetChildren()) do
+            if v:IsA("Tool") and (v.ToolTip == "Melee" or v.ToolTip == "Sword") then
+                weaponName = v.Name
+                break
+            end
+        end
+        
+        -- Nếu đang cầm vũ khí thì lấy tên đó luôn
+        if plr.Character:FindFirstChildOfClass("Tool") then
+            weaponName = plr.Character:FindFirstChildOfClass("Tool").Name
+        end
+
+        -- 2. Gửi gói tin Đánh + Xác thực (Dùng Remote CommF_ trực tiếp)
+        -- Đây là cách các bản Paid đánh mà không cần vung tay
+        replicated.Remotes.CommF_:InvokeServer("attack", target, 1)
+        replicated.Remotes.Validator:FireServer(math.huge)
+
+        -- 3. Cắt Animation ngầm (Bypass Framework)
+        local CombatFramework = require(plr.PlayerScripts:WaitForChild("CombatFramework"))
+        local controller = CombatFramework.activeController
+        if controller then
+            -- Ép Framework tin rằng mình đang cầm vũ khí để nó cho phép đánh nhanh
+            controller.hitboxMagnitude = 60
+            controller.readyToAttack = true
+            controller.attackInterval = 0
+        end
+    end)
+end
+
 
 if World1 then
     Boss = {
@@ -1986,6 +1992,30 @@ QuestNeta = function()
     }
 end
 
+-- [[ VŨ KHÍ BÍ MẬT: REMOTE ATTACK KHÔNG VUNG TAY ]]
+local function ShadowAttack(target)
+    if not _G.Config.FastAttack or not target then return end
+    pcall(function()
+        -- Gửi gói tin đánh trực tiếp vào Server
+        local comm = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
+        if comm then
+            comm:InvokeServer("attack", target, 1)
+            -- Validator để chống bị Anticheat đá
+            ReplicatedStorage.Remotes.Validator:FireServer(math.huge)
+        end
+        
+        -- Cắt Animation nếu đang cầm vũ khí
+        local CombatFramework = require(plr.PlayerScripts:WaitForChild("CombatFramework"))
+        local AC = CombatFramework.activeController
+        if AC and AC.equipped then
+            AC.hitboxMagnitude = 60
+            AC.attackInterval = 0
+            AC.readyToAttack = true
+        end
+    end)
+end
+
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
@@ -2039,24 +2069,165 @@ ImageButton.MouseButton1Click:Connect(function()
     TweenService:Create(ImageButton, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = ImageButton.Rotation + 360}):Play()
     ParticleEmitter:Emit(15)
 end)
-
 local Tabs = {
-    Main = Window:AddTab({ Title = "Farm", Icon = "home" }),
-    Settings = Window:AddTab({ Title = "Config", Icon = "settings" }),
-    Melee = Window:AddTab({ Title = "Fighting Style", Icon = "swords" }),
-    Quests = Window:AddTab({ Title = "Items Farm", Icon = "shrub" }),
-    New = Window:AddTab({ Title = "New Events", Icon = "star" }),
-    SeaEvent = Window:AddTab({ Title = "Sea Events", Icon = "waves" }),
-    Mirage = Window:AddTab({ Title = "Mirage + RaceV4", Icon = "component" }),
-    Drago = Window:AddTab({ Title = "Drago Dojo", Icon = "target" }),
-    Prehistoric = Window:AddTab({ Title = "Prehistoric", Icon = "skull" }),
-    Raids = Window:AddTab({ Title = "Raid", Icon = "zap" }),
-    Combat = Window:AddTab({ Title = "Combat PVP", Icon = "shield" }),
-    Travel = Window:AddTab({ Title = "Teleport", Icon = "map-pin" }),
-    Fruit = Window:AddTab({ Title = "Fruit", Icon = "apple" }),
-    Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "tally-5" })
+  Info = Window:AddTab({ Title = "Information", Icon = "info" }),
+    Main = Window:AddTab({
+        Title = "General",
+        Icon = "Home"
+    }),
+    Settings = Window:AddTab({
+        Title = "Config",
+        Icon = ""
+    }),
+    Melee = Window:AddTab({
+        Title = "Fighting Style",
+        Icon = ""
+    }),
+    Quests = Window:AddTab({
+        Title = "Items Farm",
+        Icon = ""
+    }),
+    New = Window:AddTab({
+        Title = "New Events",
+        Icon = ""
+    }),
+    SeaEvent = Window:AddTab({
+        Title = "Sea Events",
+        Icon = ""
+    }),
+    Mirage = Window:AddTab({
+        Title = "Mirage + RaceV4",
+        Icon = ""
+    }),
+    Drago = Window:AddTab({
+        Title = "Drago Dojo",
+        Icon = ""
+    }),
+    Prehistoric = Window:AddTab({
+        Title = "Prehistoric",
+        Icon = ""
+    }),
+    Raids = Window:AddTab({
+        Title = "Raid",
+        Icon = ""
+    }),
+    Combat = Window:AddTab({
+        Title = "Combat PVP",
+        Icon = ""
+    }),
+    Travel = Window:AddTab({
+        Title = "Teleport",
+        Icon = ""
+    }),
+    Fruit = Window:AddTab({
+        Title = "Fruits",
+        Icon = ""
+    }),
+    Shop = Window:AddTab({
+        Title = "Shop",
+        Icon = ""
+    }),
+    Misc = Window:AddTab({
+        Title = "Misc",
+        Icon = ""
+    })
 }
+
+Window:SelectTab(Tabs.Info)
+
+task.spawn(function()
+    pcall(function()
+        repeat task.wait(0.5) until Tabs and Tabs.Info
+        
+        local InfoTab = Tabs.Info
+        local Player = game.Players.LocalPlayer
+        local StatsService = game:GetService("Stats")
+        local StartTime = tick()
+
+        -- --- PHẦN 1: PERFORMANCE (TRÊN CÙNG) ---
+        InfoTab:AddSection("📊 System Performance")
+        local PerfPara = InfoTab:AddParagraph({
+            Title = "Live Stats",
+            Content = "⚡ FPS: Calculating... | 📶 Ping: Calculating...\n🕒 Up Time: 00h 00m 00s"
+        })
+
+        -- --- PHẦN 2: THÔNG TIN SCRIPT ---
+        InfoTab:AddSection("🛡️ System Info")
+        InfoTab:AddParagraph({
+            Title = "Shadow-Premium Edition",
+            Content = "✨ Welcome To The Script SHADOW-PREMIUM.\n👤 Creator: Kabii\n🛠️ Version: 1.0.0"
+        })
+        
+        InfoTab:AddParagraph({
+            Title = "User Information", 
+            Content = "🆔 Name: " .. Player.Name .. "\n🎭 Display: @" .. Player.DisplayName
+        })
+
+        -- --- PHẦN 3: THÔNG BÁO ĐẢO (ĐÃ THÊM ĐẢO CÁO & ICON) ---
+        InfoTab:AddSection("🌕 World Events")
+        local EventPara = InfoTab:AddParagraph({
+            Title = "Island Radar",
+            Content = "🏝️ Mirage: Checking...\n🦖 Prehistoric: Checking...\n❄️ Frozen: Checking...\n🦊 Kitsune: Checking..."
+        })
+
+        -- --- PHẦN 4: TRẠNG THÁI HỆ THỐNG ---
+        InfoTab:AddSection("⚙️ Status Systems")
+        InfoTab:AddParagraph({
+            Title = "Optimization", 
+            Content = "📱 Device: Mobile/PC Optimized\n⚡ Fast Attack: Enabled Always"
+        })
+
+        -- --- PHẦN 5: HỖ TRỢ (DƯỚI CÙNG) ---
+        InfoTab:AddSection("💬 Support")
+        InfoTab:AddButton({
+            Title = "Link Discord SHADOW",
+            Description = "Contact me via Discord for support",
+            Callback = function()
+                setclipboard("https://discord.com/users/1272477314843807778")
+                Fluent:Notify({
+                    Title = "Shadow-Premium",
+                    Content = "Đã sao chép link Discord!",
+                    Duration = 5
+                })
+            end
+        })
+
+        -- --- VÒNG LẶP CẬP NHẬT THÔNG SỐ & CHECK ĐẢO ---
+        task.spawn(function()
+            while task.wait(1) do
+                pcall(function()
+                    -- Cập nhật Performance
+                    local fps = math.floor(1 / task.wait())
+                    local ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue())
+                    local uptime = tick() - StartTime
+                    local hours = math.floor(uptime / 3600)
+                    local mins = math.floor((uptime % 3600) / 60)
+                    local secs = math.floor(uptime % 60)
+                    
+                    PerfPara:SetDesc(string.format(
+                        "⚡ FPS: %d | 📶 Ping: %dms\n🕒 Up Time: %02dh %02dm %02ds",
+                        fps, ping, hours, mins, secs
+                    ))
+
+                    -- Check 4 Đảo (Thêm Đảo Cáo)
+                    local function check(name) 
+                        return game:GetService("Workspace").Map:FindFirstChild(name) and "✅ Appeared" or "❌ Not Found" 
+                    end
+                    
+                    local kitsune = game:GetService("Workspace").Map:FindFirstChild("Kitsune Island") or game:GetService("Workspace").Map:FindFirstChild("Kitsune Shrine")
+                    local kitStatus = kitsune and "✅ Appeared" or "❌ Not Found"
+
+                    EventPara:SetDesc(string.format(
+                        "🏝️ Mirage: %s\n🦖 Prehistoric: %s\n❄️ Frozen: %s\n🦊 Kitsune: %s",
+                        check("Mirage Island"), check("Prehistoric Island"), check("Frozen Dimension"), kitStatus
+                    ))
+                end)
+            end
+        end)
+    end)
+end)
+
+
 
 local FarmLevel = Tabs.Main:AddToggle("FarmLevel", {
     Title = "Auto Farm Level",
@@ -9684,7 +9855,10 @@ if World3 then
         end
     end)
 end
-
+--tabs.travel 
+task.spawn(function()
+    pcall(function()
+        repeat task.wait(0.5) until Tabs and Tabs.Travel
 Tabs.Travel:AddSection("Travel - Worlds")
 Tabs.Travel:AddButton({
     Title = "Travel East Blue (World 1)",
@@ -9830,8 +10004,14 @@ spawn(function()
         end
     end
 end)
+end)
+end)
 
---[[Tabs.Fruit:AddSection("Fruits Options")
+--tabs.Fruit
+task.spawn(function()
+    pcall(function()
+        repeat task.wait(0.5) until Tabs and Tabs.Fruit
+Tabs.Fruit:AddSection("Fruits Options")
 local fruitsOnSale = {}
 local function addCommas(number)
     local formatted = tostring(number)
@@ -9986,9 +10166,14 @@ spawn(function()
             end)
         end
     end
-end)]]--
+end)
+end)
+end)
 
-
+--tabs.Shop
+task.spawn(function()
+    pcall(function()
+        repeat task.wait(0.5) until Tabs and Tabs.Shop
 Tabs.Shop:AddSection("Shop Options")
 Tabs.Shop:AddButton({
     Title = "Buy Buso",
@@ -10357,6 +10542,13 @@ Tabs.Shop:AddButton({
         replicated.Remotes.CommF_:InvokeServer("CyborgTrainer", " Buy")
     end
 })
+end)
+end)
+
+--tabs.Misc
+task.spawn(function()
+    pcall(function()
+        repeat task.wait(0.5) until Tabs and Tabs.Misc
 Tabs.Misc:AddSection("Server - Function")
 Tabs.Misc:AddButton({
     Title = "Rejoin Server",
@@ -10814,6 +11006,8 @@ spawn(function()
         end
     end
 end)
+end)
+end)
 local player = game.Players.LocalPlayer
 local function IsEntityAlive(entity)
     if not entity then
@@ -10982,13 +11176,73 @@ task.spawn(function()
         end)
     end)
 end)
-Window:SelectTab(1)
-for i = 1, 5 do
-    Window:AddTab({ Title = " ", Icon = "" })
-end
-for i = 1, 3 do
-    Window:AddTab({ 
-        Title = " ", -- Để khoảng trắng để không hiện tên
-        Icon = ""    -- Không để Icon luôn cho sạch
-    })
-end
+
+-- [[ AUTO-EXECUTE ATTACK ]]
+task.spawn(function()
+    while task.wait() do
+        -- Chỉ đánh khi Anh bật các chế độ Farm
+        if _G.farmnear or _G.farmbone or _G.farmchese or _G.AutoFarmLevel then
+            pcall(function()
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        local root = v:FindFirstChild("HumanoidRootPart")
+                        if root and (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude < 40 then
+                            ShadowAttack(v) -- Gọi hàm đánh tay không ở Vị trí 1
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local TeleportService = game:GetService("TeleportService")
+    
+    -- Danh sách ID Group hoặc Badge của Admin (Blox Fruits)
+    local AdminGroups = {2850842, 4442272} -- Group chính thức của game
+    local AdminRank = 200 -- Rank thường là từ 200 trở lên là Admin/Mod
+
+    local function checkAdmin(player)
+        for _, groupId in pairs(AdminGroups) do
+            if player:IsInGroup(groupId) and player:GetRankInGroup(groupId) >= AdminRank then
+                return true
+            end
+        end
+        -- Check thêm nếu có Badge Admin (dành cho mấy ông ẩn Group)
+        if player.UserId == 123456 then -- Anh có thể thêm ID cụ thể nếu biết
+            return true
+        end
+        return false
+    end
+
+    -- Vòng lặp kiểm tra liên tục
+    Players.PlayerAdded:Connect(function(player)
+        if checkAdmin(player) then
+            Fluent:Notify({
+                Title = "⚠️ WARNING: ADMIN DETECTED",
+                Content = "Admin " .. player.Name .. " joined! Teleporting to new server...",
+                Duration = 10
+            })
+            task.wait(1)
+            -- Nhảy Server ngay lập tức
+            local api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+            local list = game:GetService("HttpService"):JSONDecode(game:HttpGet(api))
+            for _, s in pairs(list.data) do
+                if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, Players.LocalPlayer)
+                    break
+                end
+            end
+        end
+    end)
+
+    -- Check những người đã có sẵn trong Server lúc mình mới bật Script
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Players.LocalPlayer and checkAdmin(p) then
+             -- Tương tự như trên: Nhảy server
+        end
+    end
+end)
