@@ -1,27 +1,11 @@
--- [[ SHADOW ANTI-BAN & BYPASS SYSTEM - PERFECT EDITION ]]
--- File này lưu trên GitHub, đã tối ưu chống Crash cho máy yếu
-
--- Chờ game load hoàn toàn để tránh xung đột dữ liệu lúc loading screen
+-- [[ SHADOW ANTI-BAN - ULTRA SMOOTH EDITION ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local StarterGui = game:GetService("StarterGui")
 
--- [1] Hàm thông báo
-local function ShadowNotify(text)
-    pcall(function()
-         StarterGui:SetCore("SendNotification", {
-            Title = "🛡️ Shadow Protection",
-            Text = text,
-            Duration = 5
-        })
-    end)
-end
-
--- [2] Thực thi các lớp bảo vệ
+-- [1] Bảo vệ Metatable (Phần này nhẹ, giữ nguyên)
 local Success, Error = pcall(function()
-    -- Cấu trúc Metatable
     local mt = getrawmetatable(game)
     local oldNamecall = mt.__namecall
     local oldIndex = mt.__index
@@ -29,10 +13,7 @@ local Success, Error = pcall(function()
 
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        if method == "Kick" or method == "kick" or method == "Close" then
-            ShadowNotify("Đã chặn một nỗ lực Kick/Ban!")
-            return nil
-        end
+        if method == "Kick" or method == "kick" or method == "Close" then return nil end
         return oldNamecall(self, ...)
     end)
 
@@ -45,7 +26,7 @@ local Success, Error = pcall(function()
     end)
     setreadonly(mt, true)
 
-    -- [3] REMOTE FILTERING (Tối ưu chống Crash)
+    -- [2] REMOTE FILTERING - PHƯƠNG PHÁP QUÉT CHẬM (CHỐNG ĐỨNG UI)
     local BadRemotes = {"Report", "Log", "Stats", "Checking", "AdDetector", "Validator", "BugReport", "AdminLog", "Cheat", "Ban"}
     
     local function ProtectRemote(obj)
@@ -53,43 +34,38 @@ local Success, Error = pcall(function()
             for _, name in pairs(BadRemotes) do
                 if obj.Name:lower():find(name:lower()) then
                     local oldFire = obj.FireServer
-                    obj.FireServer = newcclosure(function(self, ...)
-                        return nil 
-                    end)
+                    obj.FireServer = newcclosure(function(self, ...) return nil end)
                 end
             end
         end
     end
 
-    -- CHỈ QUÉT CÁC KHU VỰC TRỌNG YẾU (Giúp không bị đứng game/crash)
-    local ProtectedPaths = {
-        game:GetService("ReplicatedStorage"),
-        game:GetService("JointsService"),
-        game:GetService("HttpService") -- Thêm cái này cho chắc
-    }
-
-    for _, path in pairs(ProtectedPaths) do
-        for _, v in pairs(path:GetDescendants()) do
-            ProtectRemote(v)
-        end
-    end
-    
-    -- Lắng nghe các Remote mới được sinh ra sau khi game đã load
-    game.DescendantAdded:Connect(ProtectRemote)
-
-    -- [4] Vòng lặp bảo vệ tầm đánh
+    -- Thay vì dùng vòng lặp For quét 1 phát hết luôn, mình dùng task.spawn chia nhỏ ra
     task.spawn(function()
-        while task.wait(1) do
+        local allDescendants = game:GetDescendants()
+        for i, v in ipairs(allDescendants) do
+            ProtectRemote(v)
+            -- Cứ quét 100 cái thì nghỉ 1 chút cho UI nó chạy
+            if i % 100 == 0 then task.wait() end 
+        end
+        
+        -- Sau khi quét xong thì mới bật theo dõi cái mới
+        game.DescendantAdded:Connect(ProtectRemote)
+        
+        -- Hiện thông báo sau khi đã quét xong an toàn
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "🛡️ Shadow Protection",
+            Text = "Hệ thống bảo vệ đã kích hoạt mượt mà!",
+            Duration = 5
+        })
+    end)
+
+    -- [3] Vòng lặp Simulation Radius
+    task.spawn(function()
+        while task.wait(2) do -- Tăng lên 2 giây cho nhẹ máy
             pcall(function()
                 sethiddenproperty(LocalPlayer, "SimulationRadius", 65)
-                sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 65)
             end)
         end
     end)
-
-    ShadowNotify("Hệ thống bảo vệ 100% đã sẵn sàng!")
 end)
-
-if not Success then
-    warn("❌ [Shadow Anti-Ban Error]: " .. tostring(Error))
-end
