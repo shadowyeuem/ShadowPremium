@@ -1,11 +1,14 @@
--- [[ SHADOW ANTI-BAN - ULTRA SMOOTH EDITION ]]
+-- [[ SHADOW ANTI-BAN - FINAL STABLE EDITION ]]
+-- Tối ưu hóa cực mạnh cho Mobile, chống đứng UI 100%
+
 if not game:IsLoaded() then game.Loaded:Wait() end
+task.wait(5) -- Đợi 5 giây cho game ổn định hoàn toàn rồi mới chạy
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- [1] Bảo vệ Metatable (Phần này nhẹ, giữ nguyên)
 local Success, Error = pcall(function()
+    -- [1] Hook Metatable (Chỉ Hook khi thực sự cần)
     local mt = getrawmetatable(game)
     local oldNamecall = mt.__namecall
     local oldIndex = mt.__index
@@ -13,7 +16,9 @@ local Success, Error = pcall(function()
 
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        if method == "Kick" or method == "kick" or method == "Close" then return nil end
+        if not checkcaller() and (method == "Kick" or method == "kick" or method == "Close") then 
+            return nil 
+        end
         return oldNamecall(self, ...)
     end)
 
@@ -26,7 +31,7 @@ local Success, Error = pcall(function()
     end)
     setreadonly(mt, true)
 
-    -- [2] REMOTE FILTERING - PHƯƠNG PHÁP QUÉT CHẬM (CHỐNG ĐỨNG UI)
+    -- [2] Remote Filtering (Quét lười - Lazy Scan)
     local BadRemotes = {"Report", "Log", "Stats", "Checking", "AdDetector", "Validator", "BugReport", "AdminLog", "Cheat", "Ban"}
     
     local function ProtectRemote(obj)
@@ -40,29 +45,32 @@ local Success, Error = pcall(function()
         end
     end
 
-    -- Thay vì dùng vòng lặp For quét 1 phát hết luôn, mình dùng task.spawn chia nhỏ ra
+    -- Chia nhỏ quá trình quét để không gây đứng máy
     task.spawn(function()
-        local allDescendants = game:GetDescendants()
-        for i, v in ipairs(allDescendants) do
-            ProtectRemote(v)
-            -- Cứ quét 100 cái thì nghỉ 1 chút cho UI nó chạy
-            if i % 100 == 0 then task.wait() end 
+        local folders = {game:GetService("ReplicatedStorage"), game:GetService("JointsService")}
+        for _, folder in pairs(folders) do
+            local children = folder:GetDescendants()
+            for i, v in ipairs(children) do
+                ProtectRemote(v)
+                if i % 50 == 0 then task.wait() end -- Cứ 50 món thì nghỉ 1 nhịp
+            end
         end
         
-        -- Sau khi quét xong thì mới bật theo dõi cái mới
         game.DescendantAdded:Connect(ProtectRemote)
         
-        -- Hiện thông báo sau khi đã quét xong an toàn
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "🛡️ Shadow Protection",
-            Text = "Hệ thống bảo vệ đã kích hoạt mượt mà!",
-            Duration = 5
-        })
+        -- Thông báo khi mọi thứ đã xong
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "🛡️ Shadow Protection",
+                Text = "Hệ thống bảo vệ đã sẵn sàng!",
+                Duration = 5
+            })
+        end)
     end)
 
-    -- [3] Vòng lặp Simulation Radius
+    -- [3] Giữ SimulationRadius (Tăng delay cho nhẹ)
     task.spawn(function()
-        while task.wait(2) do -- Tăng lên 2 giây cho nhẹ máy
+        while task.wait(5) do
             pcall(function()
                 sethiddenproperty(LocalPlayer, "SimulationRadius", 65)
             end)
